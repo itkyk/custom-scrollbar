@@ -39,6 +39,7 @@ export class CustomScrollbar {
     this.clickFlag = false;
     this.createWrapper();
     this.addEvent();
+    this.needScrollBar();
   }
 
   watchScroll = () => {
@@ -69,6 +70,13 @@ export class CustomScrollbar {
     this.bar.style.top = `${Math.abs(barPosition)}px`
   }
 
+  needScrollBar = () => {
+    // @ts-ignore
+    if (this.contents.getBoundingClientRect().height >= this.contentsInner?.getBoundingClientRect().height) {
+      this.wrap.classList.add("is-noScroll");
+    }
+  }
+
   onBarClick = () => {
     this.clickFlag = true;
     this.contents.style.userSelect = "none"
@@ -94,7 +102,6 @@ export class CustomScrollbar {
         const scrollPos = Util.mapping(barPos, 0, range, 0 , scrollRange);
         this.contents.scrollTo(0, scrollPos)
       }
-      console.log(mouseY - scrollWrapPosY)
     }
   }
 
