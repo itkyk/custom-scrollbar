@@ -3,7 +3,15 @@ class Util {
     const transformDiff = transformMaxVal - transformMinVal;
     const diff = maxVal - minVal;
     const percentage = value / diff;
-    return transformDiff * percentage + transformMinVal;
+    const result =  transformDiff * percentage + transformMinVal;
+
+    if (result < transformMinVal) {
+      return transformMinVal
+    } else if (result > transformMaxVal) {
+      return transformMaxVal;
+    } else {
+      return result;
+    }
   }
 }
 
