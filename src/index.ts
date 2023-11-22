@@ -202,6 +202,8 @@ const createScrollBar = (target: string | HTMLElement, ScrollbarOptions: Partial
   }
 
   addEvents();
+  resizeEvents();
+
   return {
     destroy,
     getBarSize,
