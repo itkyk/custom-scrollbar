@@ -4,187 +4,218 @@ interface optionInterface {
   contents: string;
   wrap: string;
   bar: string;
-  direction: "horizontal" | "vertical"
+  direction: "horizontal" | "vertical",
+  resize: boolean;
 }
 
-interface optionProps {
-  contents?: string;
-  wrap?: string;
-  bar?: string;
-  direction?: "horizontal" | "vertical"
-}
 
 const defaultOption: optionInterface = {
   contents: ".custom-scroll-contents",
   wrap: ".custom-scroll-wrap",
   bar: ".custom-scroll-bar",
-  direction: "vertical"
+  direction: "vertical",
+  resize: true
 }
 
-export class CustomScrollbar {
-  private readonly target: HTMLElement | Element;
-  private option: optionInterface;
-  private contents: HTMLElement;
-  private readonly bar: HTMLElement;
-  private readonly wrap: HTMLElement;
-  private contentsInner: HTMLDivElement;
-  private clickFlag: boolean;
-  private moveScrollbar: ()=>void;
-  private followScrollBarFunc: (e:MouseEvent)=>void
-  constructor(target: string | HTMLElement | Element, option:optionProps = {}) {
-    this.target = typeof target === "string" ? document.querySelector(target) as HTMLElement : target;
-    this.option = Object.assign(defaultOption, option);
-    this.contents = this.target.querySelector(this.option.contents) as HTMLElement;
-    this.bar = this.target.querySelector(this.option.bar) as HTMLElement;
-    this.wrap = this.target.querySelector(this.option.wrap) as HTMLElement;
-    this.clickFlag = false;
-    this.moveScrollbar = ()=>{}
-    this.followScrollBarFunc = () => {};
-    const contentsHTML = this.contents.innerHTML;
-    this.contents.innerHTML = `<div class="custom-scrollbar-content-wrapper">${contentsHTML}</div>`
-    this.contentsInner = this.target.querySelector(".custom-scrollbar-content-wrapper") as HTMLDivElement;
-    this.setFunction();
-    this.followScrollBar();
-    this.addEvent();
-    this.needScrollBar();
-  }
+const getElements = (root: HTMLElement | Document, target: string | HTMLElement) => {
+  return typeof target === "string" ? root.querySelector(target) as HTMLElement : target;
+}
 
-
-  setFunction = () => {
-    switch (this.option.direction) {
-      case "horizontal":
-
-        this.moveScrollbar = () => {
-          const scrollVal = this.contents.scrollLeft;
-          const contentsWidth = this.contents.clientWidth;
-          let scrollRange = 0;
-          if (this.contentsInner) {
-            scrollRange = this.contentsInner.clientWidth - contentsWidth;
-          }
-          const barWidth = this.bar.clientWidth;
-          const range = this.wrap.clientWidth - barWidth;
-          const barPosition = Util.mapping(scrollVal, 0, scrollRange,0, range)
-          this.bar.style.left = `${Math.abs(barPosition)}px`
-        }
-        break;
-      case "vertical":
-        this.moveScrollbar = () => {
-          const scrollVal = this.contents.scrollTop;
-          const contentsHeight = this.contents.clientHeight;
-          let scrollRange = 0;
-          if (this.contentsInner) {
-            scrollRange = this.contentsInner.clientHeight - contentsHeight;
-          }
-          const barHeight = this.bar.clientHeight;
-          const range = this.wrap.clientHeight - barHeight;
-          const barPosition = Util.mapping(scrollVal, 0, scrollRange,0, range)
-          this.bar.style.top = `${Math.abs(barPosition)}px`
-        }
-        break;
-    }
-  }
-
-  getBarSize = () => {
-    switch (this.option.direction) {
-      case "horizontal":
-        const scrollbarWrapWidth = this.wrap.getBoundingClientRect().width;
-        const contentsWrapWidth = this.contents.getBoundingClientRect().width;
-        const contentsInnerWidth = this.contentsInner.getBoundingClientRect().width;
-        const widthRatio = contentsWrapWidth / contentsInnerWidth;
-        return scrollbarWrapWidth * widthRatio;
-      case "vertical":
-        const scrollbarWrapHeight = this.wrap.getBoundingClientRect().height;
-        const contentsWrapHeight = this.contents.getBoundingClientRect().height;
-        const contentsInnerHeight = this.contentsInner.getBoundingClientRect().height;
-        const heightRatio = contentsWrapHeight / contentsInnerHeight;
-        return scrollbarWrapHeight * heightRatio;
-    }
-  }
-
-
-  needScrollBar = () => {
-    switch(this.option.direction) {
-      case "horizontal":
-        if (this.contents.getBoundingClientRect().width >= this.contentsInner?.getBoundingClientRect().width) {
-          this.wrap.classList.add("is-noScroll");
-        } else {
-          this.wrap.classList.remove("is-noScroll");
-        }
-        break;
-      case "vertical":
-        if (this.contents.getBoundingClientRect().height >= this.contentsInner?.getBoundingClientRect().height) {
-          this.wrap.classList.add("is-noScroll");
-        } else {
-          this.wrap.classList.remove("is-noScroll");
-        }
-        break;
-    }
-  }
-
-  onBarClick = () => {
-    this.clickFlag = true;
-    this.contents.style.userSelect = "none"
-    this.bar.classList.add("is-grabbing")
-  }
-
-  onBarUnClick = () => {
-    this.clickFlag = false;
-    this.contents.style.userSelect = ""
-    this.bar.classList.remove("is-grabbing")
-  }
-
-  followScrollBar = () => {
-    switch(this.option.direction) {
-      case "horizontal":
-        this.followScrollBarFunc = (e:MouseEvent) => {
-          if (this.clickFlag) {
-            const mouseX = e.pageX;
-            const scrollWrapPosX = this.wrap.getBoundingClientRect().left;
-            const mouseToBarDiff = mouseX - this.bar.getBoundingClientRect().left;
-            const barPos = mouseX - scrollWrapPosX - mouseToBarDiff;
-            const range = this.wrap.clientHeight - this.bar.clientHeight;
-            const contentsWidth = this.contents.clientWidth;
-            const scrollRange =this.contentsInner ?  this.contentsInner.clientHeight - contentsWidth : 0;
-            if (barPos >= 0 && barPos <= range) {
-              this.bar.style.left = `${barPos}px`;
-              const scrollPos = Util.mapping(barPos, 0, range, 0 , scrollRange);
-              this.contents.scrollTo(scrollPos, 0)
-            }
-          }
-        }
-        break;
-      case "vertical":
-        this.followScrollBarFunc = (e: MouseEvent) => {
-          if (this.clickFlag) {
-            const mouseY = e.pageY;
-            const scrollWrapPosY = this.wrap.getBoundingClientRect().top;
-            const mouseToBarDiff = mouseY - this.bar.getBoundingClientRect().top;
-            const barPos = mouseY - scrollWrapPosY - mouseToBarDiff;
-            const range = this.wrap.clientHeight - this.bar.clientHeight;
-            const contentsHeight = this.contents.clientHeight;
-            const scrollRange =this.contentsInner ?  this.contentsInner.clientHeight - contentsHeight : 0;
-            if (barPos >= 0 && barPos <= range) {
-              this.bar.style.top = `${barPos}px`;
-              const scrollPos = Util.mapping(barPos, 0, range, 0 , scrollRange);
-              this.contents.scrollTo(0, scrollPos)
-            }
-          }
-        }
-        break;
-    }
-  }
-
-  addEvent = () => {
-    this.contents.addEventListener("scroll", this.moveScrollbar)
-    this.bar.addEventListener("mousedown", this.onBarClick);
-    window.addEventListener("mouseup", this.onBarUnClick);
-    window.addEventListener("mousemove", this.followScrollBarFunc)
-  }
-
-  destroy = () => {
-    this.contents.removeEventListener("scroll", this.moveScrollbar);
-    this.bar.removeEventListener("click", this.onBarClick);
-    window.removeEventListener("mouseup", this.onBarUnClick);
-    window.removeEventListener("mousemove", this.followScrollBarFunc)
+const switchDirection = <T>(directions: {horizontal: T, vertical: T}, direction: "horizontal" | "vertical"): T => {
+  if (direction === "horizontal") {
+    return  directions.horizontal;
+  } else {
+    return  directions.vertical
   }
 }
+
+const createScrollBar = (target: string | HTMLElement, scrollbarOption: Partial<optionInterface> = {}) => {
+  const targetEle =getElements(document, target)
+  const targetInitialInner = targetEle.innerHTML.toString();
+  const option = Object.assign(defaultOption, scrollbarOption);
+  let contents = getElements(targetEle, option.contents);
+  let bar = getElements(targetEle, option.bar);
+  let wrap = getElements(targetEle, option.wrap);
+  let clickFlag = false;
+  let contentsHTML = contents.innerHTML;
+  contents.innerHTML = `<div class="custom-scrollbar-content-wrapper">${contentsHTML}</div>`;
+  let contentsInner = targetEle.querySelector(".custom-scrollbar-content-wrapper") as HTMLDivElement;
+
+  // Reload
+  const reload = () => {
+    destroy();
+    contents = getElements(targetEle, option.contents);
+    bar = getElements(targetEle, option.bar);
+    wrap = getElements(targetEle, option.wrap);
+    clickFlag = false;
+    contentsHTML = contents.innerHTML;
+    contents.innerHTML = `<div class="custom-scrollbar-content-wrapper">${contentsHTML}</div>`;
+    contentsInner = targetEle.querySelector(".custom-scrollbar-content-wrapper") as HTMLDivElement;
+    addEvents();
+  }
+
+  // getBarSize
+  const getBarSize = switchDirection({
+    horizontal: () => {
+      const scrollbarWrapWidth = wrap.getBoundingClientRect().width;
+      const contentsWrapWidth = contents.getBoundingClientRect().width;
+      const contentsInnerWidth = contentsInner.getBoundingClientRect().width;
+      const widthRatio = contentsWrapWidth / contentsInnerWidth;
+      return scrollbarWrapWidth * widthRatio;
+    },
+    vertical: () => {
+      const scrollbarWrapHeight = wrap.getBoundingClientRect().height;
+      const contentsWrapHeight = contents.getBoundingClientRect().height;
+      const contentsInnerHeight = contentsInner.getBoundingClientRect().height;
+      const heightRatio = contentsWrapHeight / contentsInnerHeight;
+      return scrollbarWrapHeight * heightRatio;
+    }
+  }, option.direction)
+
+  // moveScrollbar
+  const moveScrollbar = switchDirection({
+    horizontal: () => {
+      const scrollVal = contents.scrollLeft;
+      const contentsWidth = contents.clientWidth;
+      let scrollRange = contentsInner.clientWidth - contentsWidth;
+      const barWidth = bar.clientWidth;
+      const range = wrap.clientWidth - barWidth;
+      const barPosition = Util.mapping(scrollVal, 0, scrollRange, 0, range)
+      bar.style.left = `${Math.abs(barPosition)}px`;
+    },
+    vertical: () => {
+      const scrollVal = contents.scrollTop;
+      const contentsHeight = contents.clientHeight;
+      let scrollRange = contentsInner.clientHeight - contentsHeight;
+      const barHeight = bar.clientHeight;
+      const range = wrap.clientHeight - barHeight;
+      const barPosition = Util.mapping(scrollVal, 0, scrollRange,0, range)
+      bar.style.top = `${Math.abs(barPosition)}px`
+    }
+  }, option.direction);
+
+  //needScrollbar
+  const isNeedScrollbar = switchDirection({
+    horizontal: () => {
+      if (contents.getBoundingClientRect().width >= contentsInner?.getBoundingClientRect().width) {
+        wrap.classList.add("disable-scrollbar");
+        return false
+      } else {
+        wrap.classList.remove("disable-scrollbar");
+        return false;
+      }
+    },
+    vertical: () => {
+      if (contents.getBoundingClientRect().height >= contentsInner?.getBoundingClientRect().height) {
+        wrap.classList.add("disable-scrollbar");
+        return false;
+      } else {
+        wrap.classList.remove("disable-scrollbar");
+        return true;
+      }
+    }
+  }, option.direction);
+
+  const setScrollbarStatus = () => {
+    if (isNeedScrollbar()) {
+      wrap.classList.remove("disable-scrollbar");
+    } else {
+      wrap.classList.add("disable-scrollbar");
+    }
+  }
+
+  // followScrollBarFunc
+  const followScrollBarFunc = switchDirection({
+    horizontal: (e:MouseEvent) => {
+      if (clickFlag) {
+        const mouseX = e.pageX;
+        const scrollWrapPosX = wrap.getBoundingClientRect().left;
+        const mouseToBarDiff = mouseX - bar.getBoundingClientRect().left;
+        const barPos = mouseX - scrollWrapPosX - mouseToBarDiff;
+        const range = wrap.clientHeight - bar.clientHeight;
+        const contentsWidth = contents.clientWidth;
+        const scrollRange =contentsInner ?  contentsInner.clientHeight - contentsWidth : 0;
+        if (barPos >= 0 && barPos <= range) {
+          bar.style.left = `${barPos}px`;
+          const scrollPos = Util.mapping(barPos, 0, range, 0 , scrollRange);
+          contents.scrollTo(scrollPos, 0)
+        }
+      }
+    },
+    vertical: (e: MouseEvent) => {
+      if (clickFlag) {
+        const mouseY = e.pageY;
+        const scrollWrapPosY = wrap.getBoundingClientRect().top;
+        const mouseToBarDiff = mouseY - bar.getBoundingClientRect().top;
+        const barPos = mouseY - scrollWrapPosY - mouseToBarDiff;
+        const range = wrap.clientHeight - bar.clientHeight;
+        const contentsHeight = contents.clientHeight;
+        const scrollRange =contentsInner ?  contentsInner.clientHeight - contentsHeight : 0;
+        if (barPos >= 0 && barPos <= range) {
+          bar.style.top = `${barPos}px`;
+          const scrollPos = Util.mapping(barPos, 0, range, 0 , scrollRange);
+          contents.scrollTo(0, scrollPos)
+        }
+      }
+    }
+  }, option.direction)
+
+  // onBarClick
+  const onBarClick = () => {
+    clickFlag = true;
+    contents.style.userSelect = "none"
+    bar.classList.add("is-grabbing")
+  };
+
+  // onBarUnClick
+  const onBarUnClick = () => {
+    clickFlag = false;
+    contents.style.userSelect = ""
+    bar.classList.remove("is-grabbing")
+  }
+
+  // Resize Events
+  const resizeEvents = () => {
+    isNeedScrollbar();
+    bar.style.height = `${getBarSize()}px`;
+  }
+
+  const addEvents = () => {
+    contents.addEventListener("scroll", moveScrollbar)
+    bar.addEventListener("mousedown", onBarClick);
+    window.addEventListener("mouseup", onBarUnClick);
+    window.addEventListener("mousemove", followScrollBarFunc)
+    if (option.resize) {
+      window.addEventListener("resize", resizeEvents)
+    }
+  }
+
+  const destroy = () => {
+    contents.removeEventListener("scroll", moveScrollbar)
+    bar.removeEventListener("mousedown", onBarClick);
+    window.removeEventListener("mouseup", onBarUnClick);
+    window.removeEventListener("mousemove", followScrollBarFunc)
+    if (option.resize) {
+      window.removeEventListener("resize", resizeEvents);
+    }
+    targetEle.innerHTML = targetInitialInner;
+  }
+
+  addEvents();
+  return {
+    destroy,
+    getBarSize,
+    isNeedScrollbar,
+    setScrollbarStatus,
+    options: option,
+    elements: {
+      target: targetEle,
+      contents,
+      bar,
+      wrap,
+      contentsInner
+    }
+  }
+}
+
+export default createScrollBar;
