@@ -1,17 +1,17 @@
 import Util from "./util";
 
-interface optionInterface {
+interface ScrollbarOptions {
   contents: string;
-  wrap: string;
+  barWrap: string;
   bar: string;
   direction: "horizontal" | "vertical",
   resize: boolean;
 }
 
 
-const defaultOption: optionInterface = {
+const defaultOption: ScrollbarOptions = {
   contents: ".custom-scroll-contents",
-  wrap: ".custom-scroll-wrap",
+  barWrap: ".custom-scroll-wrap",
   bar: ".custom-scroll-bar",
   direction: "vertical",
   resize: true
@@ -29,13 +29,13 @@ const switchDirection = <T>(directions: {horizontal: T, vertical: T}, direction:
   }
 }
 
-const createScrollBar = (target: string | HTMLElement, scrollbarOption: Partial<optionInterface> = {}) => {
+const createScrollBar = (target: string | HTMLElement, ScrollbarOptions: Partial<ScrollbarOptions> = {}) => {
   const targetEle =getElements(document, target)
   const targetInitialInner = targetEle.innerHTML.toString();
-  const option = Object.assign(defaultOption, scrollbarOption);
+  const option = Object.assign(defaultOption, ScrollbarOptions);
   let contents = getElements(targetEle, option.contents);
   let bar = getElements(targetEle, option.bar);
-  let wrap = getElements(targetEle, option.wrap);
+  let barWrap = getElements(targetEle, option.barWrap);
   let clickFlag = false;
   let contentsHTML = contents.innerHTML;
   contents.innerHTML = `<div class="custom-scrollbar-content-wrapper">${contentsHTML}</div>`;
@@ -46,7 +46,7 @@ const createScrollBar = (target: string | HTMLElement, scrollbarOption: Partial<
     destroy();
     contents = getElements(targetEle, option.contents);
     bar = getElements(targetEle, option.bar);
-    wrap = getElements(targetEle, option.wrap);
+    barWrap = getElements(targetEle, option.barWrap);
     clickFlag = false;
     contentsHTML = contents.innerHTML;
     contents.innerHTML = `<div class="custom-scrollbar-content-wrapper">${contentsHTML}</div>`;
@@ -57,14 +57,14 @@ const createScrollBar = (target: string | HTMLElement, scrollbarOption: Partial<
   // getBarSize
   const getBarSize = switchDirection({
     horizontal: () => {
-      const scrollbarWrapWidth = wrap.getBoundingClientRect().width;
+      const scrollbarWrapWidth = barWrap.getBoundingClientRect().width;
       const contentsWrapWidth = contents.getBoundingClientRect().width;
       const contentsInnerWidth = contentsInner.getBoundingClientRect().width;
       const widthRatio = contentsWrapWidth / contentsInnerWidth;
       return scrollbarWrapWidth * widthRatio;
     },
     vertical: () => {
-      const scrollbarWrapHeight = wrap.getBoundingClientRect().height;
+      const scrollbarWrapHeight = barWrap.getBoundingClientRect().height;
       const contentsWrapHeight = contents.getBoundingClientRect().height;
       const contentsInnerHeight = contentsInner.getBoundingClientRect().height;
       const heightRatio = contentsWrapHeight / contentsInnerHeight;
@@ -79,7 +79,7 @@ const createScrollBar = (target: string | HTMLElement, scrollbarOption: Partial<
       const contentsWidth = contents.clientWidth;
       let scrollRange = contentsInner.clientWidth - contentsWidth;
       const barWidth = bar.clientWidth;
-      const range = wrap.clientWidth - barWidth;
+      const range = barWrap.clientWidth - barWidth;
       const barPosition = Util.mapping(scrollVal, 0, scrollRange, 0, range)
       bar.style.left = `${Math.abs(barPosition)}px`;
     },
@@ -88,7 +88,7 @@ const createScrollBar = (target: string | HTMLElement, scrollbarOption: Partial<
       const contentsHeight = contents.clientHeight;
       let scrollRange = contentsInner.clientHeight - contentsHeight;
       const barHeight = bar.clientHeight;
-      const range = wrap.clientHeight - barHeight;
+      const range = barWrap.clientHeight - barHeight;
       const barPosition = Util.mapping(scrollVal, 0, scrollRange,0, range)
       bar.style.top = `${Math.abs(barPosition)}px`
     }
@@ -98,19 +98,19 @@ const createScrollBar = (target: string | HTMLElement, scrollbarOption: Partial<
   const isNeedScrollbar = switchDirection({
     horizontal: () => {
       if (contents.getBoundingClientRect().width >= contentsInner?.getBoundingClientRect().width) {
-        wrap.classList.add("disable-scrollbar");
+        barWrap.classList.add("disable-scrollbar");
         return false
       } else {
-        wrap.classList.remove("disable-scrollbar");
+        barWrap.classList.remove("disable-scrollbar");
         return false;
       }
     },
     vertical: () => {
       if (contents.getBoundingClientRect().height >= contentsInner?.getBoundingClientRect().height) {
-        wrap.classList.add("disable-scrollbar");
+        barWrap.classList.add("disable-scrollbar");
         return false;
       } else {
-        wrap.classList.remove("disable-scrollbar");
+        barWrap.classList.remove("disable-scrollbar");
         return true;
       }
     }
@@ -118,9 +118,9 @@ const createScrollBar = (target: string | HTMLElement, scrollbarOption: Partial<
 
   const setScrollbarStatus = () => {
     if (isNeedScrollbar()) {
-      wrap.classList.remove("disable-scrollbar");
+      barWrap.classList.remove("disable-scrollbar");
     } else {
-      wrap.classList.add("disable-scrollbar");
+      barWrap.classList.add("disable-scrollbar");
     }
   }
 
@@ -129,10 +129,10 @@ const createScrollBar = (target: string | HTMLElement, scrollbarOption: Partial<
     horizontal: (e:MouseEvent) => {
       if (clickFlag) {
         const mouseX = e.pageX;
-        const scrollWrapPosX = wrap.getBoundingClientRect().left;
+        const scrollWrapPosX = barWrap.getBoundingClientRect().left;
         const mouseToBarDiff = mouseX - bar.getBoundingClientRect().left;
         const barPos = mouseX - scrollWrapPosX - mouseToBarDiff;
-        const range = wrap.clientHeight - bar.clientHeight;
+        const range = barWrap.clientHeight - bar.clientHeight;
         const contentsWidth = contents.clientWidth;
         const scrollRange =contentsInner ?  contentsInner.clientHeight - contentsWidth : 0;
         if (barPos >= 0 && barPos <= range) {
@@ -145,10 +145,10 @@ const createScrollBar = (target: string | HTMLElement, scrollbarOption: Partial<
     vertical: (e: MouseEvent) => {
       if (clickFlag) {
         const mouseY = e.pageY;
-        const scrollWrapPosY = wrap.getBoundingClientRect().top;
+        const scrollWrapPosY = barWrap.getBoundingClientRect().top;
         const mouseToBarDiff = mouseY - bar.getBoundingClientRect().top;
         const barPos = mouseY - scrollWrapPosY - mouseToBarDiff;
-        const range = wrap.clientHeight - bar.clientHeight;
+        const range = barWrap.clientHeight - bar.clientHeight;
         const contentsHeight = contents.clientHeight;
         const scrollRange =contentsInner ?  contentsInner.clientHeight - contentsHeight : 0;
         if (barPos >= 0 && barPos <= range) {
@@ -207,15 +207,16 @@ const createScrollBar = (target: string | HTMLElement, scrollbarOption: Partial<
     getBarSize,
     isNeedScrollbar,
     setScrollbarStatus,
+    reload,
     options: option,
     elements: {
       target: targetEle,
       contents,
       bar,
-      wrap,
+      barWrap,
       contentsInner
     }
   }
 }
 
-export default createScrollBar;
+export {createScrollBar, ScrollbarOptions};
